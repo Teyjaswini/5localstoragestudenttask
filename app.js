@@ -1,136 +1,157 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+const stdContainer = document.getElementById('stdContainer')
+const stdForm = document.getElementById('stdForm')
+const stdAddBtn = document.getElementById('stdAddBtn')
+const stdUpdatedBtn = document.getElementById('stdUpdatedBtn')
 
-<title>Student Task</title>
+const fnameControl = document.getElementById('fname')
+const lnameControl = document.getElementById('lname')
+const emailControl = document.getElementById('email')
+const contactControl = document.getElementById('contact')
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+/* ================= LOCAL STORAGE LOAD ================= */
 
-<style>
-html,body{
-    height:100%;
-    margin:0;
+let stdArr
+
+if(localStorage.getItem('stdArr')){
+    stdArr = JSON.parse(localStorage.getItem('stdArr'))
+}else{
+    stdArr = []
 }
 
-body{
-    background-image:url("https://wallpapers.com/images/featured/hd-office-background-wwmb5ymdbjbjv689.jpg");
-    background-size:cover;
-    background-position:center;
-    background-repeat:no-repeat;
-    background-attachment:scroll; /* important for mobile */
+/* ================= UTIL ================= */
+
+function snackbar(msg){
+    Swal.fire({
+        title: msg,
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton:false
+    })
 }
 
-/* overlay for readability */
-body::before{
-    content:"";
-    position:fixed;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    background:rgba(0,0,0,0.45); /* dark overlay */
-    z-index:-1;
+const uuid = () => {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
+    .replace(/[xy]/g, c => {
+        const r = Math.random()*16|0
+        const v = c=='x'?r:(r&0x3|0x8)
+        return v.toString(16)
+    })
 }
 
-/* make cards slightly transparent */
-.card{
-    background:rgba(255,255,255,0.95);
-    border-radius:12px;
+/* ================= CREATE UI ================= */
+
+function createStdTrs(arr){
+    let result = ''
+
+    arr.forEach((ele,i)=>{
+        result += `
+        <tr id="${ele.stdId}">
+            <td>${i+1}</td>
+            <td>${ele.fname} ${ele.lname}</td>
+            <td>${ele.email}</td>
+            <td>${ele.contact}</td>
+
+            <td class="text-center">
+                <i onclick="onEdit(this)" 
+                class="fa-solid fa-pen-to-square fa-lg text-success"></i>
+            </td>
+
+            <td class="text-center">
+                <i onclick="onRemove(this)" 
+                class="fa-solid fa-trash-can fa-lg text-danger"></i>
+            </td>
+        </tr>
+        `
+    })
+
+    stdContainer.innerHTML = result
 }
 
-/* header glass effect */
-header{
-    background:rgba(0,123,255,0.85) !important;
-    backdrop-filter:blur(5px);
+createStdTrs(stdArr)
+
+/* ================= ADD ================= */
+
+function onStdAdd(e){
+    e.preventDefault()
+
+    let obj = {
+        fname: fnameControl.value,
+        lname: lnameControl.value,
+        email: emailControl.value,
+        contact: contactControl.value,
+        stdId: uuid()
+    }
+
+    stdArr.push(obj)
+    localStorage.setItem('stdArr', JSON.stringify(stdArr))
+
+    createStdTrs(stdArr)
+    stdForm.reset()
+
+    snackbar("Student added")
 }
-</style>
 
+stdForm.addEventListener('submit', onStdAdd)
 
-</head>
+/* ================= EDIT ================= */
 
-<body>
+let EDIT_ID
 
-<header class="bg-dark text-white p-4 mb-5">
-    <h3 class="m-0">Student Task</h3>
-</header>
+function onEdit(ele){
+    EDIT_ID = ele.closest('tr').id
 
-<div class="container-fluid">
-<div class="row">
+    let obj = stdArr.find(s=>s.stdId===EDIT_ID)
 
-<!-- FORM -->
-<div class="col-md-4">
-<div class="card">
-<div class="card-body">
+    fnameControl.value = obj.fname
+    lnameControl.value = obj.lname
+    emailControl.value = obj.email
+    contactControl.value = obj.contact
 
-<form id="stdForm">
+    stdAddBtn.classList.add('d-none')
+    stdUpdatedBtn.classList.remove('d-none')
+}
 
-<div class="form-group">
-<label>First Name</label>
-<input type="text" id="fname" class="form-control" required>
-</div>
+/* ================= UPDATE ================= */
 
-<div class="form-group">
-<label>Last Name</label>
-<input type="text" id="lname" class="form-control" required>
-</div>
+stdUpdatedBtn.addEventListener('click', onStdUpdate)
 
-<div class="form-group">
-<label>Email</label>
-<input type="email" id="email" class="form-control" required>
-</div>
+function onStdUpdate(){
 
-<div class="form-group">
-<label>Contact</label>
-<input type="text" id="contact" class="form-control" required>
-</div>
+    let updatedObj = {
+        fname: fnameControl.value,
+        lname: lnameControl.value,
+        email: emailControl.value,
+        contact: contactControl.value,
+        stdId: EDIT_ID
+    }
 
-<button id="stdAddBtn" class="btn btn-outline-primary btn-sm btn-block">
-Add Student
-</button>
+    let index = stdArr.findIndex(s=>s.stdId===EDIT_ID)
+    stdArr[index] = updatedObj
 
-<button type="button" id="stdUpdatedBtn"
-class="btn btn-outline-success btn-sm btn-block d-none">
-Update Student
-</button>
+    localStorage.setItem('stdArr', JSON.stringify(stdArr))
 
-</form>
+    createStdTrs(stdArr)
 
-</div>
-</div>
-</div>
+    stdForm.reset()
+    stdAddBtn.classList.remove('d-none')
+    stdUpdatedBtn.classList.add('d-none')
 
-<!-- TABLE -->
-<div class="col-md-8">
-<div class="card">
-<div class="card-body">
+    snackbar("Student updated")
+}
 
-<table class="table table-bordered">
-<thead>
-<tr>
-<th>Sr</th>
-<th>Full Name</th>
-<th>Email</th>
-<th>Contact</th>
-<th>Edit</th>
-<th>Delete</th>
-</tr>
-</thead>
+/* ================= DELETE ================= */
 
-<tbody id="stdContainer"></tbody>
-</table>
+function onRemove(ele){
 
-</div>
-</div>
-</div>
+    let id = ele.closest('tr').id
 
-</div>
-</div>
+    if(!confirm("Delete student?")) return
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="app.js"></script>
+    let index = stdArr.findIndex(s=>s.stdId===id)
+    stdArr.splice(index,1)
 
-</body>
-</html>
+    localStorage.setItem('stdArr', JSON.stringify(stdArr))
+
+    createStdTrs(stdArr)
+    snackbar("Student removed")
+}
